@@ -1,36 +1,33 @@
 openapi: 3.0.0
 info:
   title: Transaction Service API
+  description: |
+    RESTful API for managing user wallets, shopping carts, and transactions.   Each user has a single unified wallet that supports balances in USD and USDT,   and allows conversion between the two.
   version: 1.0.0
-  description: >
-    RESTful API for managing user wallets, shopping carts, and transactions.  
-    Each user has a single unified wallet that supports balances in USD and USDT,  
-    and allows conversion between the two.
-
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/columbiauniversity-b07/Sprint1/1.0.0
-  - description: Production Server
-    url: https://api.example.com
-  - description: Development Server
-    url: http://localhost:8000
-
+- url: https://virtserver.swaggerhub.com/columbiauniversity-b07/Sprint1/1.0.0
+  description: SwaggerHub API Auto Mocking
+- url: https://api.example.com
+  description: Production Server
+- url: http://localhost:8000
+  description: Development Server
 tags:
-  - name: Wallets
-  - name: Cart
-  - name: Transactions
-
+- name: Wallets
+- name: Cart
+- name: Transactions
 paths:
-  ############################
-  # Wallets
-  ############################
   /wallets:
     get:
-      tags: [Wallets]
+      tags:
+      - Wallets
       summary: Get a user's wallet
       parameters:
-        - $ref: "#/components/parameters/UserIdQuery"
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: Wallet retrieved successfully
@@ -40,24 +37,18 @@ paths:
                 $ref: "#/components/schemas/Wallet"
         "404":
           $ref: "#/components/responses/NotFound"
-
     post:
-      tags: [Wallets]
+      tags:
+      - Wallets
       summary: Initialize wallet for a user
-      description: >
-        Each user can have only one wallet.  
-        If the wallet already exists, the existing one will be returned.
+      description: |
+        Each user can have only one wallet.   If the wallet already exists, the existing one will be returned.
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [user_id]
-              properties:
-                user_id:
-                  type: string
-                  format: uuid
+              $ref: "#/components/schemas/wallets_body"
+        required: true
       responses:
         "201":
           description: Wallet created successfully
@@ -67,13 +58,18 @@ paths:
                 $ref: "#/components/schemas/Wallet"
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /wallets/{wallet_id}:
     get:
-      tags: [Wallets]
+      tags:
+      - Wallets
       summary: Get wallet by ID
       parameters:
-        - $ref: "#/components/parameters/WalletId"
+      - name: wallet_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: Wallet retrieved successfully
@@ -83,39 +79,41 @@ paths:
                 $ref: "#/components/schemas/Wallet"
         "404":
           $ref: "#/components/responses/NotFound"
-
     delete:
-      tags: [Wallets]
+      tags:
+      - Wallets
       summary: Delete a wallet (admin only)
       parameters:
-        - $ref: "#/components/parameters/WalletId"
+      - name: wallet_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "204":
           description: Wallet deleted successfully
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /wallets/{wallet_id}/deposit:
     post:
-      tags: [Wallets]
+      tags:
+      - Wallets
       summary: Deposit funds into wallet
       description: Deposit USD or USDT into the unified wallet.
       parameters:
-        - $ref: "#/components/parameters/WalletId"
-      requestBody:
+      - name: wallet_id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required: [amount, currency]
-              properties:
-                currency:
-                  type: string
-                  enum: [USD, USDT]
-                amount:
-                  type: string
-                  pattern: "^[0-9]+(\\.[0-9]{1,8})?$"
+              $ref: "#/components/schemas/wallet_id_deposit_body"
+        required: true
       responses:
         "200":
           description: Deposit successful
@@ -125,38 +123,26 @@ paths:
                 $ref: "#/components/schemas/Wallet"
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /wallets/{wallet_id}/convert:
     post:
-      tags: [Wallets]
+      tags:
+      - Wallets
       summary: Convert between USD and USDT
-      description: >
+      description: |
         Convert between USD and USDT.
       parameters:
-        - $ref: "#/components/parameters/WalletId"
-      requestBody:
+      - name: wallet_id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required: [source_currency, target_currency, amount, exchange_rate]
-              properties:
-                source_currency:
-                  type: string
-                  enum: [USD, USDT]
-                target_currency:
-                  type: string
-                  enum: [USD, USDT]
-                amount:
-                  type: string
-                  example: "100.00"
-                exchange_rate:
-                  type: string
-                  example: "1.00"
-                fee:
-                  type: string
-                  example: "0.50"
+              $ref: "#/components/schemas/wallet_id_convert_body"
+        required: true
       responses:
         "200":
           description: Conversion successful
@@ -166,16 +152,18 @@ paths:
                 $ref: "#/components/schemas/Wallet"
         "400":
           $ref: "#/components/responses/BadRequest"
-
-  ############################
-  # Cart
-  ############################
   /cart-items:
     get:
-      tags: [Cart]
+      tags:
+      - Cart
       summary: Get all cart items for a user
       parameters:
-        - $ref: "#/components/parameters/UserIdQuery"
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: Cart items retrieved successfully
@@ -187,18 +175,23 @@ paths:
                   $ref: "#/components/schemas/CartItem"
         "400":
           $ref: "#/components/responses/BadRequest"
-
     post:
-      tags: [Cart]
+      tags:
+      - Cart
       summary: Add an item to a user's cart
       parameters:
-        - $ref: "#/components/parameters/UserIdQuery"
-      requestBody:
+      - name: user_id
+        in: query
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/CartItemCreate"
+        required: true
       responses:
         "201":
           description: Item added successfully
@@ -208,25 +201,30 @@ paths:
                 $ref: "#/components/schemas/CartItem"
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /cart-items/{product_id}:
     put:
-      tags: [Cart]
+      tags:
+      - Cart
       summary: Update quantity of a product in the cart
       parameters:
-        - $ref: "#/components/parameters/UserIdQuery"
-        - $ref: "#/components/parameters/ProductId"
-      requestBody:
+      - name: user_id
+        in: query
         required: true
+        schema:
+          type: string
+          format: uuid
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required: [quantity]
-              properties:
-                quantity:
-                  type: integer
-                  minimum: 1
+              $ref: "#/components/schemas/cartitems_product_id_body"
+        required: true
       responses:
         "200":
           description: Quantity updated successfully
@@ -236,36 +234,46 @@ paths:
                 $ref: "#/components/schemas/CartItem"
         "400":
           $ref: "#/components/responses/BadRequest"
-
     delete:
-      tags: [Cart]
+      tags:
+      - Cart
       summary: Remove a product from the cart
       parameters:
-        - $ref: "#/components/parameters/UserIdQuery"
-        - $ref: "#/components/parameters/ProductId"
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "204":
           description: Product removed successfully
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /cart-items/checkout:
     post:
-      tags: [Cart]
+      tags:
+      - Cart
       summary: Checkout the user's cart to create a transaction
       parameters:
-        - $ref: "#/components/parameters/UserIdQuery"
-      requestBody:
+      - name: user_id
+        in: query
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required: [currency]
-              properties:
-                currency:
-                  type: string
-                  enum: [USD, USDT]
+              $ref: "#/components/schemas/cartitems_checkout_body"
+        required: true
       responses:
         "201":
           description: Transaction created successfully
@@ -275,16 +283,18 @@ paths:
                 $ref: "#/components/schemas/Transaction"
         "400":
           $ref: "#/components/responses/BadRequest"
-
-  ############################
-  # Transactions
-  ############################
   /transactions:
     get:
-      tags: [Transactions]
+      tags:
+      - Transactions
       summary: List all transactions (optionally by user)
       parameters:
-        - $ref: "#/components/parameters/UserIdQuery"
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: Transactions retrieved successfully
@@ -294,16 +304,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Transaction"
-
     post:
-      tags: [Transactions]
+      tags:
+      - Transactions
       summary: Create a new transaction
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/TransactionCreate"
+        required: true
       responses:
         "201":
           description: Transaction created successfully
@@ -313,13 +323,18 @@ paths:
                 $ref: "#/components/schemas/Transaction"
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /transactions/{transaction_id}:
     get:
-      tags: [Transactions]
+      tags:
+      - Transactions
       summary: Get transaction details
       parameters:
-        - $ref: "#/components/parameters/TransactionId"
+      - name: transaction_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: Transaction retrieved successfully
@@ -329,23 +344,23 @@ paths:
                 $ref: "#/components/schemas/Transaction"
         "404":
           $ref: "#/components/responses/NotFound"
-
     put:
-      tags: [Transactions]
+      tags:
+      - Transactions
       summary: Update transaction status
       parameters:
-        - $ref: "#/components/parameters/TransactionId"
-      requestBody:
+      - name: transaction_id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required: [status]
-              properties:
-                status:
-                  type: string
-                  enum: [CANCELLED, FULFILLED]
+              $ref: "#/components/schemas/transactions_transaction_id_body"
+        required: true
       responses:
         "200":
           description: Transaction updated successfully
@@ -355,38 +370,40 @@ paths:
                 $ref: "#/components/schemas/Transaction"
         "400":
           $ref: "#/components/responses/BadRequest"
-
     delete:
-      tags: [Transactions]
+      tags:
+      - Transactions
       summary: Delete a transaction
       parameters:
-        - $ref: "#/components/parameters/TransactionId"
+      - name: transaction_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "204":
           description: Transaction deleted successfully
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /transactions/{transaction_id}/pay:
     post:
-      tags: [Transactions]
+      tags:
+      - Transactions
       summary: Pay for a transaction using user's unified wallet
       parameters:
-        - $ref: "#/components/parameters/TransactionId"
-      requestBody:
+      - name: transaction_id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required: [wallet_id, currency]
-              properties:
-                wallet_id:
-                  type: string
-                  format: uuid
-                currency:
-                  type: string
-                  enum: [USD, USDT]
+              $ref: "#/components/schemas/transaction_id_pay_body"
+        required: true
       responses:
         "200":
           description: Payment successful
@@ -396,27 +413,24 @@ paths:
                 $ref: "#/components/schemas/Transaction"
         "400":
           $ref: "#/components/responses/BadRequest"
-
   /transactions/{transaction_id}/refund:
     post:
-      tags: [Transactions]
+      tags:
+      - Transactions
       summary: Refund a transaction to the user's unified wallet
       parameters:
-        - $ref: "#/components/parameters/TransactionId"
-      requestBody:
+      - name: transaction_id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required: [wallet_id, currency]
-              properties:
-                wallet_id:
-                  type: string
-                  format: uuid
-                currency:
-                  type: string
-                  enum: [USD, USDT]
+              $ref: "#/components/schemas/transaction_id_refund_body"
+        required: true
       responses:
         "200":
           description: Refund successful
@@ -426,8 +440,279 @@ paths:
                 $ref: "#/components/schemas/Transaction"
         "400":
           $ref: "#/components/responses/BadRequest"
-
 components:
+  schemas:
+    Wallet:
+      required:
+      - created_at
+      - id
+      - updated_at
+      - usd_balance
+      - usdt_balance
+      - user_id
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        usd_balance:
+          type: string
+          example: "500.00000000"
+        usdt_balance:
+          type: string
+          example: "100.00000000"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CartItem:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        price:
+          type: string
+          example: "25.00"
+    CartItemCreate:
+      required:
+      - product_id
+      - quantity
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          minimum: 1
+          type: integer
+    TransactionItem:
+      required:
+      - product_id
+      - quantity
+      - title_snapshot
+      - unit_price
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        title_snapshot:
+          type: string
+        unit_price:
+          type: string
+          example: "19.99000000"
+        quantity:
+          type: integer
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        buyer_id:
+          type: string
+          format: uuid
+        seller_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - PENDING
+          - PAID
+          - CANCELLED
+          - FULFILLED
+          - REFUNDED
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionItem"
+        subtotal:
+          type: string
+          example: "49.99"
+        total:
+          type: string
+          example: "52.49"
+        currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TransactionCreate:
+      required:
+      - buyer_id
+      - currency
+      - items
+      - seller_id
+      - subtotal
+      - total
+      type: object
+      properties:
+        buyer_id:
+          type: string
+          format: uuid
+        seller_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionItem"
+        subtotal:
+          type: string
+          example: "100.00"
+        total:
+          type: string
+          example: "105.00"
+        currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: BAD_REQUEST
+        message:
+          type: string
+          example: Invalid parameters
+    wallets_body:
+      required:
+      - user_id
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+    wallet_id_deposit_body:
+      required:
+      - amount
+      - currency
+      type: object
+      properties:
+        currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+        amount:
+          pattern: "^[0-9]+(\\.[0-9]{1,8})?$"
+          type: string
+    wallet_id_convert_body:
+      required:
+      - amount
+      - exchange_rate
+      - source_currency
+      - target_currency
+      type: object
+      properties:
+        source_currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+        target_currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+        amount:
+          type: string
+          example: "100.00"
+        exchange_rate:
+          type: string
+          example: "1.00"
+        fee:
+          type: string
+          example: "0.50"
+    cartitems_product_id_body:
+      required:
+      - quantity
+      type: object
+      properties:
+        quantity:
+          minimum: 1
+          type: integer
+    cartitems_checkout_body:
+      required:
+      - currency
+      type: object
+      properties:
+        currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+    transactions_transaction_id_body:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - CANCELLED
+          - FULFILLED
+    transaction_id_pay_body:
+      required:
+      - currency
+      - wallet_id
+      type: object
+      properties:
+        wallet_id:
+          type: string
+          format: uuid
+        currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+    transaction_id_refund_body:
+      required:
+      - currency
+      - wallet_id
+      type: object
+      properties:
+        wallet_id:
+          type: string
+          format: uuid
+        currency:
+          type: string
+          enum:
+          - USD
+          - USDT
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   parameters:
     WalletId:
       name: wallet_id
@@ -457,157 +742,3 @@ components:
       schema:
         type: string
         format: uuid
-
-  responses:
-    BadRequest:
-      description: Invalid request
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-
-  schemas:
-    Wallet:
-      type: object
-      required:
-        - id
-        - user_id
-        - usd_balance
-        - usdt_balance
-        - created_at
-        - updated_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        user_id:
-          type: string
-          format: uuid
-        usd_balance:
-          type: string
-          example: "500.00000000"
-        usdt_balance:
-          type: string
-          example: "100.00000000"
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    CartItem:
-      type: object
-      properties:
-        user_id:
-          type: string
-          format: uuid
-        product_id:
-          type: string
-          format: uuid
-        quantity:
-          type: integer
-        price:
-          type: string
-          example: "25.00"
-
-    CartItemCreate:
-      type: object
-      required: [product_id, quantity]
-      properties:
-        product_id:
-          type: string
-          format: uuid
-        quantity:
-          type: integer
-          minimum: 1
-
-    TransactionItem:
-      type: object
-      required: [product_id, title_snapshot, unit_price, quantity]
-      properties:
-        product_id:
-          type: string
-          format: uuid
-        title_snapshot:
-          type: string
-        unit_price:
-          type: string
-          example: "19.99000000"
-        quantity:
-          type: integer
-
-    Transaction:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        buyer_id:
-          type: string
-          format: uuid
-        seller_id:
-          type: string
-          format: uuid
-        status:
-          type: string
-          enum: [PENDING, PAID, CANCELLED, FULFILLED, REFUNDED]
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/TransactionItem"
-        subtotal:
-          type: string
-          example: "49.99"
-        total:
-          type: string
-          example: "52.49"
-        currency:
-          type: string
-          enum: [USD, USDT]
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    TransactionCreate:
-      type: object
-      required: [buyer_id, seller_id, subtotal, total, currency, items]
-      properties:
-        buyer_id:
-          type: string
-          format: uuid
-        seller_id:
-          type: string
-          format: uuid
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/TransactionItem"
-        subtotal:
-          type: string
-          example: "100.00"
-        total:
-          type: string
-          example: "105.00"
-        currency:
-          type: string
-          enum: [USD, USDT]
-
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: string
-          example: "BAD_REQUEST"
-        message:
-          type: string
-          example: "Invalid parameters"
